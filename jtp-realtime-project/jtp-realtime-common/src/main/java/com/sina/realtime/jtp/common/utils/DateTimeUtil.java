@@ -1,4 +1,4 @@
-package com.sina.utils;
+package com.sina.realtime.jtp.common.utils;
 
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.time.FastDateFormat;

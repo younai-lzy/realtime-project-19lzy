@@ -1,4 +1,4 @@
-package com.sina.utils;
+package com.sina.realtime.jtp.common.utils;
 
 import com.ververica.cdc.connectors.mysql.source.MySqlSource;
 import com.ververica.cdc.connectors.mysql.table.StartupOptions;

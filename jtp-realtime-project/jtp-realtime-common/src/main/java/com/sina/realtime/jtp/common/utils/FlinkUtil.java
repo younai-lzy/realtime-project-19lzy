@@ -1,4 +1,4 @@
-package com.sina.utils;
+package com.sina.realtime.jtp.common.utils;
 
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.configuration.Configuration;

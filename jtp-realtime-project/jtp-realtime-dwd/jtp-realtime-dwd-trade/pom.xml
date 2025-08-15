@@ -1,16 +1,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>jtp-realtime-dwd</artifactId>
+        <artifactId>jtp-realtime-project</artifactId>
         <groupId>com.sina</groupId>
         <version>1.0.0</version>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>jtp-realtime-dwd-log</artifactId>
+    <artifactId>jtp-realtime-dwd-trade</artifactId>
     <packaging>jar</packaging>
 
-    <name>jtp-realtime-dwd-log</name>
+    <name>jtp-realtime-dwd-trade</name>
     <url>http://maven.apache.org</url>
 
     <properties>
@@ -23,12 +24,6 @@
             <artifactId>junit</artifactId>
             <version>3.8.1</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.sina</groupId>
-            <artifactId>jtp-realtime-common</artifactId>
-            <version>1.0.0</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

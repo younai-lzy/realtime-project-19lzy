@@ -1,4 +1,4 @@
-package com.sina.utils;
+package com.sina.realtime.jtp.common.utils;
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;

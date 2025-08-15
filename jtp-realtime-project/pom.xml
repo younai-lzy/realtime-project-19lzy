@@ -16,6 +16,10 @@
         <module>jtp-realtime-common</module>
         <module>jtp-realtime-ods</module>
         <module>jtp-realtime-dwd</module>
+        <module>jtp-realtime-dwd/jtp-realtime-dwd-ads</module>
+        <module>jtp-realtime-dwd/jtp-realtime-logistics</module>
+        <module>jtp-realtime-dwd/jtp-realtime-dwd-trade</module>
+        <module>jtp-realtime-dim</module>
     </modules>
 
     <properties>
