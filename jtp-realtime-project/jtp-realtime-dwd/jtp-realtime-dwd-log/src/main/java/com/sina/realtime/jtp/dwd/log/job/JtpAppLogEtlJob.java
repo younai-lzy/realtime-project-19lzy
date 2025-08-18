@@ -4,8 +4,11 @@ package com.sina.realtime.jtp.dwd.log.job;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.sina.realtime.jtp.common.utils.KafkaUtil;
+import com.sina.realtime.jtp.dwd.log.function.AdJustIsNewProcessFunction;
 import com.sina.realtime.jtp.dwd.log.function.AppLogSplitProcessFunction;
+import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SideOutputDataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -22,13 +25,17 @@ public class JtpAppLogEtlJob {
   public static void main(String[] args) throws Exception{
     //1.创建环境
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
     //设置并行度
     env.setParallelism(1);
-    //2.读取数据 消费数据
+
+    //2.读取kafka数据
     DataStream<String> kafkaDataStream = KafkaUtil.consumerKafka(env, "topic-log");
     kafkaDataStream.print("kafka");
+
     //3.数据转换-transformation
     DataStream<String> pageStream = processLog(kafkaDataStream);
+
     //4.数据输出-sink
     KafkaUtil.producerKafka(pageStream, "dwd-traffic-page-log");
 
@@ -39,19 +46,19 @@ public class JtpAppLogEtlJob {
   }
 
   /**
-   *  数据转换
+   *  todo 数据转换
    * @param stream
    */
-  private static DataStream<String> processLog(DataStream<String> stream) {
+  static DataStream<String> processLog(DataStream<String> stream) {
     //1.数据清洗
     DataStream<String> jsonStream = appLogCleaned(stream);
 
-
     //2.新老访客修复
-    //DataStream<String> etlStream = processIsNew(jsonStream);
+
+    DataStream<String> etlStream = processIsNew(jsonStream);
 
     //3.数据分流 页面日志
-    DataStream<String> pageStream = splitStream(jsonStream);
+    DataStream<String> pageStream = splitStream(etlStream);
 
     return pageStream;
   }
@@ -70,7 +77,7 @@ public class JtpAppLogEtlJob {
     final OutputTag<String> actionTag = new OutputTag<String>("action-log-Tag"){};
     //todo 第二步，分流
     SingleOutputStreamOperator<String> pageStream = etlStream.process(
-      new AppLogSplitProcessFunction(errorTag, startTag, displayTag, actionTag, errorTag1, startTag1, displayTag1, actionTag1)
+      new AppLogSplitProcessFunction(errorTag, startTag, displayTag, actionTag)
     );
 
     //todo 第三步，将分流的数据输出
@@ -89,11 +96,26 @@ public class JtpAppLogEtlJob {
 
   /**
    * 新老访客修复
-   * @param jsonStream
+   * @param
    * @return
    */
-  private static DataStream<String> processIsNew(DataStream<String> jsonStream) {
-    return null;
+  private static DataStream<String> processIsNew(DataStream<String> stream) {
+    //分组 按照mid进行分组
+    KeyedStream<String, String> midStream = stream.keyBy(new KeySelector<String, String>() {
+      @Override
+      public String getKey(String s) throws Exception {
+        // value是JSON字符串
+        JSONObject jsonObject = JSON.parseObject(s);
+        JSONObject commonJson = jsonObject.getJSONObject("common");
+        String mid = commonJson.getString("mid");
+        return mid;
+      }
+    });
+    //2.状态编程 对is_new进行修复
+    DataStream<String> isNewStream = midStream.process(new AdJustIsNewProcessFunction());
+
+    //3.返回流
+    return isNewStream;
   }
 
   /**

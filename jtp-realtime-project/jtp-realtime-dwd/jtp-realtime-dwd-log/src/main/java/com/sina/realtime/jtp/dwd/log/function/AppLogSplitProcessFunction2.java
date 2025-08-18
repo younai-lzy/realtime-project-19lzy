@@ -11,14 +11,14 @@ import org.apache.flink.util.OutputTag;
  * @author lzy
  * App日志分流：使用侧边流实现，划分为错误日志，启动日志，浏览日志，曝光日志，动作日志
  */
-public class AppLogSplitProcessFunction extends ProcessFunction<String, String> {
+public class AppLogSplitProcessFunction2 extends ProcessFunction<String, String> {
   private final OutputTag<String> errorTag;
   private final OutputTag<String> startTag;
   private final OutputTag<String> displayTag;
   private final OutputTag<String> actionTag;
 
 
-  public AppLogSplitProcessFunction(OutputTag<String> errorTag, OutputTag<String> startTag, OutputTag<String> displayTag, OutputTag<String> actionTag) {
+  public AppLogSplitProcessFunction2(OutputTag<String> errorTag, OutputTag<String> startTag, OutputTag<String> displayTag, OutputTag<String> actionTag) {
     this.errorTag = errorTag;
     this.startTag = startTag;
     this.displayTag = displayTag;
@@ -40,7 +40,6 @@ public class AppLogSplitProcessFunction extends ProcessFunction<String, String> 
     //第一步、解析JSON数据
     JSONObject jsonObject = JSON.parseObject(value);
     //第二部、错误日志 获取错误日志
-    //todo 这里的map使用的是map的get方法，通过key获取value
     if(null != jsonObject.get("err")) {
       //侧边流输出
       ctx.output(errorTag, value);
