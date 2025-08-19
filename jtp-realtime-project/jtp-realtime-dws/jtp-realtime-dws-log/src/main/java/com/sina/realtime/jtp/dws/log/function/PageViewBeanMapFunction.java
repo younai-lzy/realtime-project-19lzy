@@ -16,7 +16,7 @@ import java.util.HashMap;
 
 
 /**
- * 处理
+ * 将数据封装为实体类
  * @author 30777
  */
 public class PageViewBeanMapFunction extends RichMapFunction<String, PageViewBean> {
@@ -24,10 +24,54 @@ public class PageViewBeanMapFunction extends RichMapFunction<String, PageViewBea
   /**
    *   1.声明变量
    */
-
   private transient ValueState<String> lastVisitState = null;
   //地区字典数据
-  //private HashMap<String, String> areaDic = null;
+  private HashMap<String, String> areaDic = null;
+
+  /**
+   * 获取地区字典数据
+   * @return
+   */
+  private HashMap<String, String> getAreaDic() {
+    HashMap<String, String> map = new HashMap<>();
+    // 添加数据
+    map.put("110000","北京");
+    map.put("120000","天津");
+    map.put("140000","山西");
+    map.put("150000","内蒙古");
+    map.put("130000","河北");
+    map.put("310000","上海");
+    map.put("320000","江苏");
+    map.put("330000","浙江");
+    map.put("340000","安徽");
+    map.put("350000","福建");
+    map.put("360000","江西");
+    map.put("370000","山东");
+    map.put("710000","台湾");
+    map.put("230000","黑龙江");
+    map.put("220000","吉林");
+    map.put("210000","辽宁");
+    map.put("610000","陕西");
+    map.put("620000","甘肃");
+    map.put("630000","青海");
+    map.put("640000","宁夏");
+    map.put("650000","新疆");
+    map.put("410000","河南");
+    map.put("420000","湖北");
+    map.put("430000","湖南");
+    map.put("440000","广东");
+    map.put("450000","广西");
+    map.put("460000","海南");
+    map.put("810000","香港");
+    map.put("820000","澳门");
+    map.put("510000","四川");
+    map.put("520000","贵州");
+    map.put("530000","云南");
+    map.put("500000","重庆");
+    map.put("540000","西藏");
+    // 返回集合
+    return map ;
+  }
 
   /**
    * 初始化
@@ -36,22 +80,21 @@ public class PageViewBeanMapFunction extends RichMapFunction<String, PageViewBea
    */
   @Override
   public void open(Configuration parameters) throws Exception {
-    //2.初始化
-    lastVisitState = getRuntimeContext().getState(
-      new ValueStateDescriptor<String>("lastVisitState", String.class)
-    );
+    ValueStateDescriptor<String> stateDescriptor = new ValueStateDescriptor<>("last-visit-date", String.class);
 
-    //ValueStateDescriptor<String> valueStateDescriptor = new ValueStateDescriptor<>("lastVisitState2", String.class);
-    //ttl 设置
-//    StateTtlConfig ttlConfig = StateTtlConfig.newBuilder(Time.days(1))
-//      .updateTtlOnCreateAndWrite()
-//      .neverReturnExpired()
-//      .build();
-//    valueStateDescriptor.enableTimeToLive(ttlConfig);
-//    //2.初始化
-//    lastVisitDateState = getRuntimeContext().getState(valueStateDescriptor);
-//    //地区字典数据初始化
-//    areaDic = getAreaDic();
+    //2.初始化
+    lastVisitState = getRuntimeContext().getState(stateDescriptor);
+
+    //TTL 设置
+    StateTtlConfig ttlConfig = StateTtlConfig
+      .newBuilder(Time.days(1))
+      .setUpdateType(StateTtlConfig.UpdateType.OnReadAndWrite)
+      .neverReturnExpired()
+      .build();
+    //设置启用
+    stateDescriptor.enableTimeToLive(ttlConfig);
+    //地区字典数据初始化
+    areaDic = getAreaDic();
   }
 
 
@@ -65,7 +108,7 @@ public class PageViewBeanMapFunction extends RichMapFunction<String, PageViewBea
 
     //s2.依据地区编码获取省份名称
     String arValue = common.getString("ar");
-    //String province = areaDic.get(arValue);
+    String province = areaDic.get(arValue);
 
     //UV访客数
     Long uvCount = 0L;
@@ -85,7 +128,7 @@ public class PageViewBeanMapFunction extends RichMapFunction<String, PageViewBea
       null,
       common.getString("ba"),
       common.getString("ch"),
-      arValue,
+      province,
       common.getString("is_new"),
       //sv : 1 或 0 -> last_page_id is null, 否则为0
       page.get("last_page_id") == null ? 1L : 0L,

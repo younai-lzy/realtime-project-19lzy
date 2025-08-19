@@ -31,7 +31,7 @@ public class JtpAppLogEtlJob {
 
     //2.读取kafka数据
     DataStream<String> kafkaDataStream = KafkaUtil.consumerKafka(env, "topic-log");
-    kafkaDataStream.print("kafka");
+    //kafkaDataStream.print("kafka");
 
     //3.数据转换-transformation
     DataStream<String> pageStream = processLog(kafkaDataStream);
