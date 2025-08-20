@@ -7,20 +7,16 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>jtp-realtime-project</artifactId>
+    <artifactId>jtp_security_project</artifactId>
     <packaging>pom</packaging>
 
-    <name>jtp-realtime-project</name>
+    <name>jtp_security_project</name>
     <url>http://maven.apache.org</url>
     <modules>
-        <module>jtp-realtime-common</module>
-        <module>jtp-realtime-ods</module>
-        <module>jtp-realtime-dwd</module>
-        <module>jtp-realtime-dwd/jtp-realtime-dwd-ads</module>
-        <module>jtp-realtime-dwd/jtp-realtime-logistics</module>
-        <module>jtp-realtime-dwd/jtp-realtime-dwd-trade</module>
-        <module>jtp-realtime-dim</module>
-        <module>jtp-realtime-dws</module>
+        <module>jtp_security_realtime_common</module>
+        <module>jtp_security_realtime_ods</module>
+        <module>jtp_security_realtime_dwd</module>
+        <module>jtp_security_realtime_dws</module>
     </modules>
 
     <properties>
@@ -213,11 +209,11 @@
             </dependency>
 
             <!-- https://mvnrepository.com/artifact/com.huaban/jieba-analysis -->
-<!--            <dependency>-->
-<!--                <groupId>com.huaban</groupId>-->
-<!--                <artifactId>jieba-analysis</artifactId>-->
-<!--                <version>1.0.2</version>-->
-<!--            </dependency>-->
+            <!--            <dependency>-->
+            <!--                <groupId>com.huaban</groupId>-->
+            <!--                <artifactId>jieba-analysis</artifactId>-->
+            <!--                <version>1.0.2</version>-->
+            <!--            </dependency>-->
 
             <dependency>
                 <groupId>redis.clients</groupId>

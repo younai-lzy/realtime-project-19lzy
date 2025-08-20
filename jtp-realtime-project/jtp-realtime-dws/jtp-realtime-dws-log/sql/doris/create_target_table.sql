@@ -20,7 +20,12 @@ CREATE TABLE jtp_realtime_db.dws_traffic_page_view_window_report
     AGGREGATE KEY(`windowStartTime`, `windowEndTime`, cur_date, `brand`, `channel`, `province`, `isNew`)
     COMMENT '交易订单sku汇总表'
     PARTITION BY RANGE(`windowStartTime`) (
-        PARTITION jtp_realtime_db_table_2025 VALUES [('2025-08-14'), ('2025-08-15'))
+        PARTITION par20250814 VALUES [('2025-08-14'), ('2025-08-15')),
+        PARTITION par20250815 VALUES [('2025-08-15'), ('2025-08-16')),
+        PARTITION par20250816 VALUES [('2025-08-16'), ('2025-08-17')),
+        PARTITION par20250817 VALUES [('2025-08-17'), ('2025-08-18')),
+        PARTITION par20250818 VALUES [('2025-08-18'), ('2025-08-19')),
+        PARTITION par20250819 VALUES [('2025-08-19'), ('2025-08-20'))
     )
 DISTRIBUTED BY HASH(`windowStartTime`) BUCKETS 3
 PROPERTIES (

@@ -27,8 +27,14 @@ public class PageViewReportWindowFunction implements WindowFunction<PageViewBean
     Long uvCount = bean.getUvCount();
     Long sessionCount = bean.getSessionCount();
     //3.输出
-    String output = windowStartTime + "," + windowEndTime + "," + key + "," +
-      uvCount + "," + sessionCount + "," + pvCount + "," + pvDuringTime;
+    String output = windowStartTime + "," +
+      windowEndTime + "," +
+      windowStartTime.substring(0,10) + "," +
+      key + "," +
+      uvCount + "," +
+      sessionCount + "," +
+      pvCount + "," +
+      pvDuringTime;
 
     out.collect(output);
   }

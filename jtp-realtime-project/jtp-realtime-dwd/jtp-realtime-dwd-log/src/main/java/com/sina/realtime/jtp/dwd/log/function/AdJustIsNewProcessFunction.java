@@ -62,5 +62,4 @@ public class AdJustIsNewProcessFunction extends KeyedProcessFunction<String, Str
     //收集数据
     out.collect(jsonObject.toJSONString());
   }
-
 }

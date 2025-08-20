@@ -1,3 +1,5 @@
+
+use jtp_realtime_db;
 -- 创建表
 DROP TABLE IF EXISTS jtp_realtime_db.dws_traffic_search_keyword_window_report ;
 CREATE TABLE IF NOT EXISTS jtp_realtime_db.dws_traffic_search_keyword_window_report
@@ -19,7 +21,9 @@ CREATE TABLE IF NOT EXISTS jtp_realtime_db.dws_traffic_search_keyword_window_rep
         PARTITION par20250815 VALUES [("2025-08-15"), ("2025-08-16")),
         PARTITION par20250816 VALUES [("2025-08-16"), ("2025-08-17")),
         PARTITION par20250817 VALUES [("2025-08-17"), ("2025-08-18")),
-        PARTITION par20250818 VALUES [("2025-08-18"), ("2025-08-19"))
+        PARTITION par20250818 VALUES [("2025-08-18"), ("2025-08-19")),
+        PARTITION par20250819 VALUES [("2025-08-19"), ("2025-08-20")),
+        PARTITION par20250820 VALUES [("2025-08-20"), ("2025-08-21"))
     )
     DISTRIBUTED BY HASH(`window_start_time`) BUCKETS 3
     properties (

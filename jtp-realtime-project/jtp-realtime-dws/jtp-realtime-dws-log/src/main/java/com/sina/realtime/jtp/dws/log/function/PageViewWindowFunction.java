@@ -40,10 +40,10 @@ public class PageViewWindowFunction implements WindowFunction<PageViewBean, Stri
     String output = windowStartTime + "," + windowEndTime + "," +
       windowStartTime.substring(0,10) + "," +
       key + "," +
-      pvCount + "," +
-      pvDuringTime + "," +
       uvCount + "," +
-      sessionCount;
+      sessionCount + "," +
+      uvCount + "," +
+      pvDuringTime;
     out.collect(output);
   }
 }
