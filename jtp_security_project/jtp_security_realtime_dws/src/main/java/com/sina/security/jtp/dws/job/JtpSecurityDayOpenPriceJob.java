@@ -9,6 +9,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.table.api.EnvironmentSettings;
+import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableEnvironment;
 
 import java.math.BigDecimal;
@@ -24,70 +25,109 @@ public class JtpSecurityDayOpenPriceJob {
   public static void main(String[] args) throws Exception {
     //创建表环境
     TableEnvironment tEnv = getTableEnv();
+    //创建输入表
+    createInputTable(tEnv);
+    //查询指标今开
+    Table reportTable = queryDayOpenPrice(tEnv);
 
+    //4.输出表-Output：映射到Doris表
+    //createOutputTable(tEnv);
+
+    //5.保存数据
+    //saveToDoris(tEnv, reportTable);
 
   }
 
   /**
-   * 处理数据
+   * 输出表-Output：映射到Doris表
+   * @param tEnv
    */
-//  private static DataStream<Tuple3<String, String, Double>> processData(DataStream<String> stream) {
-//    //s1.将数据转为实体类对象
-//    SingleOutputStreamOperator<StockData> map = stream.map(new MapFunction<String, StockData>() {
-//      @Override
-//      public StockData map(String s) throws Exception {
-//        String[] split = s.split("\\|");
-//        return new StockData(split[0], split[1], split[2], split[3],
-//          Long.parseLong(split[4]),
-//          new BigDecimal(split[5]), Double.parseDouble(split[6]),
-//          Double.parseDouble(split[7]), Double.parseDouble(split[8]),
-//          Double.parseDouble(split[9]), Double.parseDouble(split[10]),
-//          Double.parseDouble(split[11]),
-//          split[12],
-//          split[13]
-//        );
-//
-//      }
-//    });
-//    //s2.设置水位线
-//    SingleOutputStreamOperator<StockData> waterMarks = map.assignTimestampsAndWatermarks(WatermarkStrategy.<StockData>forBoundedOutOfOrderness(Duration.ofSeconds(0))
-//      .withTimestampAssigner(new SerializableTimestampAssigner<StockData>() {
-//
-//        @Override
-//        public long extractTimestamp(StockData stockData, long l) {
-//          //获取交易日期
-//          String tradingDate = stockData.getTradingDate();
-//          String updateTime = stockData.getUpdateTime();
-//          String ts = tradingDate + " " + updateTime;
-//          //将时间转化为毫秒
-//          // 2. 定义与字符串格式匹配的 DateTimeFormatter
-//          // 注意：.SSS 表示毫秒，不区分大小写
-//          DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
-//
-//          // 3. 将字符串解析为 LocalDateTime 对象
-//          LocalDateTime localDateTime = LocalDateTime.parse(ts, formatter);
-//
-//          // 4. 将 LocalDateTime 转换为毫秒时间戳
-//          // 需要指定时区偏移量，这里使用东八区（+8）
-//          long timestampMillis = localDateTime.toInstant(ZoneOffset.ofHours(8)).toEpochMilli();
-//
-//          //System.out.println("原始字符串: " + ts);
-//          //System.out.println("转换后的毫秒时间戳: " + timestampMillis);
-//          return timestampMillis;
-//        }
-//      })
-//    );
-//
-//    DataStream<Tuple3<String, String, Double>> openPrices = waterMarks.keyBy(stockData -> stockData.getCode())
-//      //划分秒级滚动窗口
-//      .window(TumblingEventTimeWindows.of(Time.seconds(3)))
-//      .process(new SecurityProcessDayOpenFunction());
-//
-//    //s5.输出
-//    //openPrices.print();
-//    return openPrices;
-//
-//  }
+  private static void createOutputTable(TableEnvironment tEnv) {
+    tEnv.executeSql("CREATE TABLE IF NOT EXISTS dws_security_day_open_price_report_sink\n" +
+      "(\n" +
+      "    `tradeDate`   STRING,\n" +
+      "    `code`        BIGINT,\n" +
+      "    `openPrice`   DECIMAL,\n" +
+      "    `ts`          BIGINT\n" +
+      ") WITH (\n" +
+      "  'connector' = 'doris',\n" +
+      ""
+    )
+
+  }
+
+  /**
+   * 查询指标今开
+   * @param tEnv
+   */
+  private static Table queryDayOpenPrice(TableEnvironment tEnv) {
+    Table reportTable = tEnv.sqlQuery(
+      "SELECT `tradingDate`,\n" +
+        "       `stockCode`,\n" +
+        "       `openPrice`,\n" +
+        "       `closePrice`,\n" +
+        "       `highPrice`,\n" +
+        "       `lowPrice`,\n" +
+        "       `totalVolume`,\n" +
+        "       `totalAmount`,\n" +
+        "       ((`closePrice` - `openPrice`) / `openPrice`) * 100 AS `changePercent`\n" +
+        "FROM (SELECT\n" +
+        "          TUMBLE_START(`row_time`, INTERVAL '1' DAY) AS `tradingDate`,\n" +
+        "          `stockCode` AS `stockCode`,\n" +
+        "          FIRST_VALUE(`openPrice`)                   AS `openPrice`,\n" +
+        "          LAST_VALUE(`latestPrice`)                  AS `closePrice`,\n" +
+        "          MAX(`highPrice`)                           AS `highPrice`,\n" +
+        "          MIN(`minPrice`)                            AS `lowPrice`,\n" +
+        "          SUM(`volume`)                              AS `totalVolume`,\n" +
+        "          SUM(`amount`)                              AS `totalAmount`\n" +
+        "      FROM dwd_mapping_to_kafka_source\n" +
+        "\n" +
+        "           -- 定义日级滚动窗口，并按股票代码分组\n" +
+        "      GROUP BY `stockCode`,\n" +
+        "               TUMBLE(`row_time`, INTERVAL '1' DAY))"
+    );
+
+    //返回计算结果
+    return reportTable;
+  }
+
+  /**
+   * FlinkSQL中输入表，构建DDL语句，创建FlinkSQL表映射到kafka消息队列
+   */
+  private static void createInputTable(TableEnvironment tableEnv) {
+    tableEnv.executeSql(
+      "CREATE TABLE dwd_mapping_to_kafka_source\n" +
+        "(\n" +
+        "    `tradingDate`   STRING,\n" +
+        "    `code`          BIGINT,\n" +
+        "    `stockCode`     STRING,\n" +
+        "    `stockName`     STRING,\n" +
+        "    `volume`        BIGINT,\n" +
+        "    `changePercent` DOUBLE,\n" +
+        "    `openPrice`     DOUBLE,\n" +
+        "    `highPrice`     DOUBLE,\n" +
+        "    `maxPrice`      DOUBLE,\n" +
+        "    `minPrice`      DOUBLE,\n" +
+        "    `latestPrice`   DOUBLE,\n" +
+        "    `prevClose`     DOUBLE,\n" +
+        "    `typeFlag`      STRING,\n" +
+        "    `updateTime`    STRING,\n" +
+        "    `row_time` AS TO_TIMESTAMP(CONCAT(`tradingDate`, ' ', `updateTime`), 'yyyy-MM-dd HH:mm:ss.SSS'),\n" +
+        "    WATERMARK FOR `row_time` AS `row_time` - INTERVAL '0' SECOND\n" +
+        ") WITH (\n" +
+        "  'connector' = 'kafka',\n" +
+        "  'topic' = 'dwd_market_tick',\n" +
+        "  'properties.bootstrap.servers' = 'node101:9092,node102:9092,node103:9092',\n" +
+        "  'properties.group.id' = 'testGroup',\n" +
+        "  'scan.startup.mode' = 'earliest-offset',\n" +
+        "  'format' = 'json',\n" +
+        "  'json.fail-on-missing-field' = 'false',\n" +
+        "  'json.ignore-parse-errors' = 'true'\n" +
+        ")"
+    );
+  }
+
+
   /**
    * 获取表环境
    */
